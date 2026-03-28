@@ -1,0 +1,16 @@
+VolumeScroll is a lightweight Android utility that lets you scroll in apps using your volume buttons.
+
+Key features:
+- Scroll with volume up/down
+- Quick Settings tile toggle
+- Dual-volume-button chord toggle
+- Adjustable scroll amount (70% to 120%)
+- Optional invert direction
+- Optional per-app allowlist (scroll only in selected apps)
+
+How it works:
+VolumeScroll uses an Accessibility Service to perform global scrolling actions across apps.
+
+Privacy notes:
+- No internet permission is required for core functionality.
+- Accessibility access is only used for scrolling and key handling features.
