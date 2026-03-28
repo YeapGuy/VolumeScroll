@@ -9,6 +9,7 @@ I built this because it's more comfortable for me to read through long articles 
 ## Features
 
 - aesthetic minimalist Material You UI
+- ability to select apps in which volume-scrolling will be enabled
 - customizable scroll amount
 - invert direction option
 - dual-volume-button shortcut toggle
