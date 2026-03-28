@@ -1,19 +1,22 @@
-# VolumeScroll
+<h1>
+  <img src="fastlane/metadata/android/en-US/images/icon.png" alt="VolumeScroll icon" width="36" height="36" style="vertical-align: middle; border-radius: 8px; margin-right: 10px;" />
+  <span style="vertical-align: middle;">VolumeScroll</span>
+</h1>
 
 **A small Android app that lets you scroll almost anywhere using your volume buttons.**
 
 ## Why?
 
-I built this because it's more comfortable for me to read through long articles or essays page-by-page. It's more like reading a book 😃 Plus, scrolling like this is way more comfortable when you only hold your phone in one hand, e.g. in public transport.
+I built this because it's more comfortable for me to read through long articles or essays "page-by-page". It's more like reading a book 😃 Plus, scrolling like this is way more comfortable when you only hold your phone in one hand, e.g. in public transport.
 
 ## Features
 
-- aesthetic minimalist Material You UI
 - ability to select apps in which volume-scrolling will be enabled
 - customizable scroll amount
 - invert direction option
 - dual-volume-button shortcut toggle
 - Quick Settings tile
+- aesthetic minimalist Material You UI
 
 ## Screenshots
 
@@ -33,17 +36,6 @@ Using an Accessibility Service is the only way to do this.
 
 The app doesn't do anything else with the Accesibility permission. The app doesn't need network permission and you can inspect the code yourself.
 
-## Setup (User)
-
-1. Install and open the app.
-2. Tap Open Accessibility Settings.
-3. Enable Volume Scroll Service.
-4. Return to the app and configure your preferences.
-
-Optional:
-
-- Add the VolumeScroll Quick Settings tile from the system tile editor.
-
 ## Build (Developer)
 
 ### Requirements
@@ -57,12 +49,6 @@ Optional:
 ```bash
 ./gradlew :app:assembleDebug
 ```
-
-## Project Notes
-
-- Main app UI: `app/src/main/java/com/yeapguy/volumescroll/MainActivity.java`
-- Accessibility service: `app/src/main/java/com/yeapguy/volumescroll/VolumeScrollAccessibilityService.java`
-- Quick Settings tile: `app/src/main/java/com/yeapguy/volumescroll/VolumeScrollTileService.java`
 
 ## Contributing
 
