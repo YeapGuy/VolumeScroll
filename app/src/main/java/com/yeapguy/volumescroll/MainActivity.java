@@ -2,6 +2,7 @@ package com.yeapguy.volumescroll;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,10 +13,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.color.MaterialColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.slider.Slider;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,11 +33,13 @@ public class MainActivity extends AppCompatActivity {
     private SettingsRepository settingsRepository;
 
     private MaterialSwitch featureSwitch;
+    private MaterialSwitch appFilterSwitch;
     private MaterialSwitch invertDirectionSwitch;
     private MaterialSwitch dualKeyToggleSwitch;
     private Slider stepsSlider;
     private TextView stepsLabelText;
     private TextView stepsValueText;
+    private TextView selectedAppsSummaryText;
     private TextView serviceStatusText;
     private SharedPreferences.OnSharedPreferenceChangeListener settingsChangeListener;
     private final Handler statusRefreshHandler = new Handler(Looper.getMainLooper());
@@ -46,13 +54,16 @@ public class MainActivity extends AppCompatActivity {
         settingsChangeListener = (sharedPreferences, key) -> runOnUiThread(this::bindCurrentSettings);
 
         featureSwitch = findViewById(R.id.switchFeature);
+        appFilterSwitch = findViewById(R.id.switchAppFilter);
         invertDirectionSwitch = findViewById(R.id.switchInvertDirection);
         dualKeyToggleSwitch = findViewById(R.id.switchDualKeyToggle);
         stepsSlider = findViewById(R.id.sliderSteps);
         stepsLabelText = findViewById(R.id.textStepsLabel);
         stepsValueText = findViewById(R.id.textStepsValue);
+        selectedAppsSummaryText = findViewById(R.id.textSelectedAppsSummary);
         serviceStatusText = findViewById(R.id.textServiceStatus);
         MaterialButton openAccessibilitySettings = findViewById(R.id.buttonOpenAccessibilitySettings);
+        MaterialButton selectAppsButton = findViewById(R.id.buttonSelectApps);
 
         stepsSlider.setLabelFormatter(value -> formatPercent(roundToStepPercent(value)));
 
@@ -61,7 +72,14 @@ public class MainActivity extends AppCompatActivity {
         featureSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             settingsRepository.setFeatureEnabled(isChecked);
             boolean serviceEnabled = updateServiceStatus();
-            updateSettingsEnabledState(isChecked, serviceEnabled);
+            updateSettingsEnabledState(isChecked, serviceEnabled, settingsRepository.isAppFilterEnabled());
+        });
+
+        appFilterSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            settingsRepository.setAppFilterEnabled(isChecked);
+            updateSelectedAppsSummary(isChecked, settingsRepository.getAllowedAppPackages().size());
+            boolean serviceEnabled = updateServiceStatus();
+            updateSettingsEnabledState(settingsRepository.isFeatureEnabled(), serviceEnabled, isChecked);
         });
 
         invertDirectionSwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
@@ -80,6 +98,8 @@ public class MainActivity extends AppCompatActivity {
             settingsRepository.setScrollAmount(percentToAmount(percent));
             stepsValueText.setText(formatPercent(percent));
         });
+
+        selectAppsButton.setOnClickListener(v -> showAppSelectionDialog());
 
         openAccessibilitySettings.setOnClickListener(v -> {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
@@ -119,40 +139,134 @@ public class MainActivity extends AppCompatActivity {
         boolean featureEnabled = settingsRepository.isFeatureEnabled();
         boolean invertEnabled = settingsRepository.isInvertDirectionEnabled();
         boolean dualKeyToggleEnabled = settingsRepository.isShortcutToggleEnabled();
+        boolean appFilterEnabled = settingsRepository.isAppFilterEnabled();
+        int selectedAppsCount = settingsRepository.getAllowedAppPackages().size();
         float scrollAmount = settingsRepository.getScrollAmount();
         int scrollPercent = amountToPercent(scrollAmount);
 
         featureSwitch.setChecked(featureEnabled);
+        appFilterSwitch.setChecked(appFilterEnabled);
         invertDirectionSwitch.setChecked(invertEnabled);
         dualKeyToggleSwitch.setChecked(dualKeyToggleEnabled);
         stepsSlider.setValue(scrollPercent);
         stepsValueText.setText(formatPercent(scrollPercent));
+        updateSelectedAppsSummary(appFilterEnabled, selectedAppsCount);
         boolean serviceEnabled = updateServiceStatus();
-        updateSettingsEnabledState(featureEnabled, serviceEnabled);
+        updateSettingsEnabledState(featureEnabled, serviceEnabled, appFilterEnabled);
     }
 
-    private void updateSettingsEnabledState(boolean featureEnabled, boolean serviceEnabled) {
+    private void updateSettingsEnabledState(boolean featureEnabled, boolean serviceEnabled, boolean appFilterEnabled) {
         boolean dualToggleEnabled = serviceEnabled;
         boolean mainToggleEnabled = serviceEnabled;
+        boolean appFilterToggleEnabled = serviceEnabled && featureEnabled;
+        boolean appPickerEnabled = appFilterToggleEnabled && appFilterEnabled;
         boolean secondaryEnabled = serviceEnabled && featureEnabled;
+        MaterialButton selectAppsButton = findViewById(R.id.buttonSelectApps);
 
         featureSwitch.setEnabled(mainToggleEnabled);
         dualKeyToggleSwitch.setEnabled(dualToggleEnabled);
+        appFilterSwitch.setEnabled(appFilterToggleEnabled);
+        selectAppsButton.setEnabled(appPickerEnabled);
         invertDirectionSwitch.setEnabled(secondaryEnabled);
         stepsSlider.setEnabled(secondaryEnabled);
         stepsLabelText.setEnabled(secondaryEnabled);
         stepsValueText.setEnabled(secondaryEnabled);
+        selectedAppsSummaryText.setEnabled(appPickerEnabled);
 
         float dualAlpha = dualToggleEnabled ? 1.0f : 0.45f;
         float mainAlpha = mainToggleEnabled ? 1.0f : 0.45f;
+        float appFilterAlpha = appFilterToggleEnabled ? 1.0f : 0.45f;
+        float appPickerAlpha = appPickerEnabled ? 1.0f : 0.45f;
         float alpha = secondaryEnabled ? 1.0f : 0.45f;
 
         dualKeyToggleSwitch.setAlpha(dualAlpha);
         featureSwitch.setAlpha(mainAlpha);
+        appFilterSwitch.setAlpha(appFilterAlpha);
+        selectAppsButton.setAlpha(appPickerAlpha);
         invertDirectionSwitch.setAlpha(alpha);
         stepsSlider.setAlpha(alpha);
         stepsLabelText.setAlpha(alpha);
         stepsValueText.setAlpha(alpha);
+        selectedAppsSummaryText.setAlpha(appPickerAlpha);
+    }
+
+    private void updateSelectedAppsSummary(boolean appFilterEnabled, int selectedAppsCount) {
+        if (!appFilterEnabled) {
+            selectedAppsSummaryText.setText(R.string.hint_selected_apps_off);
+            return;
+        }
+        if (selectedAppsCount <= 0) {
+            selectedAppsSummaryText.setText(R.string.hint_selected_apps_none);
+            return;
+        }
+        selectedAppsSummaryText.setText(getString(R.string.hint_selected_apps_count, selectedAppsCount));
+    }
+
+    private void showAppSelectionDialog() {
+        List<AppEntry> launchableApps = getLaunchableApps();
+        Set<String> currentSelectedPackages = settingsRepository.getAllowedAppPackages();
+
+        CharSequence[] labels = new CharSequence[launchableApps.size()];
+        boolean[] checked = new boolean[launchableApps.size()];
+        for (int i = 0; i < launchableApps.size(); i++) {
+            AppEntry app = launchableApps.get(i);
+            labels[i] = app.label;
+            checked[i] = currentSelectedPackages.contains(app.packageName);
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.dialog_select_apps_title)
+                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> checked[which] = isChecked)
+                .setPositiveButton(R.string.action_save, (dialog, which) -> {
+                    Set<String> selectedPackages = new HashSet<>();
+                    for (int i = 0; i < launchableApps.size(); i++) {
+                        if (checked[i]) {
+                            selectedPackages.add(launchableApps.get(i).packageName);
+                        }
+                    }
+                    settingsRepository.setAllowedAppPackages(selectedPackages);
+                    updateSelectedAppsSummary(settingsRepository.isAppFilterEnabled(), selectedPackages.size());
+                })
+                .setNeutralButton(R.string.action_clear, (dialog, which) -> {
+                    settingsRepository.setAllowedAppPackages(new HashSet<>());
+                    updateSelectedAppsSummary(settingsRepository.isAppFilterEnabled(), 0);
+                })
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private List<AppEntry> getLaunchableApps() {
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        List<ResolveInfo> resolveInfos = getPackageManager().queryIntentActivities(intent, 0);
+        List<AppEntry> apps = new ArrayList<>();
+        Set<String> seenPackages = new HashSet<>();
+
+        for (ResolveInfo resolveInfo : resolveInfos) {
+            String packageName = resolveInfo.activityInfo.packageName;
+            if (packageName == null || seenPackages.contains(packageName)) {
+                continue;
+            }
+            seenPackages.add(packageName);
+
+            CharSequence label = resolveInfo.loadLabel(getPackageManager());
+            String labelText = label == null ? packageName : label.toString();
+            apps.add(new AppEntry(labelText, packageName));
+        }
+
+        apps.sort((left, right) -> left.label.compareToIgnoreCase(right.label));
+        return apps;
+    }
+
+    private static final class AppEntry {
+        final String label;
+        final String packageName;
+
+        AppEntry(String label, String packageName) {
+            this.label = label;
+            this.packageName = packageName;
+        }
     }
 
     private int roundToStepPercent(float value) {

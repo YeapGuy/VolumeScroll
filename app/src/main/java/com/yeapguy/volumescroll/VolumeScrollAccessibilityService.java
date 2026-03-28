@@ -24,6 +24,7 @@ import android.widget.TextView;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Set;
 
 public class VolumeScrollAccessibilityService extends AccessibilityService {
 
@@ -36,6 +37,7 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
     private boolean volumeUpPassedToSystem = false;
     private boolean volumeDownPassedToSystem = false;
     private boolean chordConsumed = false;
+    private String latestForegroundPackage;
     private int pendingKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private int pendingToken = 0;
     private View feedbackOverlayView;
@@ -68,7 +70,10 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // No event handling needed; key events drive this service.
+        if (event == null || event.getPackageName() == null) {
+            return;
+        }
+        latestForegroundPackage = event.getPackageName().toString();
     }
 
     @Override
@@ -111,6 +116,12 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
 
             if (!featureEnabled) {
                 // Feature is off: do not consume single volume keys so Android can adjust volume.
+                markKeyPassedToSystem(keyCode, true);
+                return false;
+            }
+
+            if (!isScrollAllowedForForegroundApp()) {
+                // App filter is enabled and current app is not allowed: pass volume keys through.
                 markKeyPassedToSystem(keyCode, true);
                 return false;
             }
@@ -165,6 +176,9 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
         if (!settingsRepository.isFeatureEnabled()) {
             return;
         }
+        if (!isScrollAllowedForForegroundApp()) {
+            return;
+        }
 
         boolean shouldScrollForward = keyCode == KeyEvent.KEYCODE_VOLUME_DOWN;
         if (settingsRepository.isInvertDirectionEnabled()) {
@@ -178,6 +192,31 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
         if (!handled) {
             handled = performScrollWithNodeActions(shouldScrollForward);
         }
+    }
+
+    private boolean isScrollAllowedForForegroundApp() {
+        if (!settingsRepository.isAppFilterEnabled()) {
+            return true;
+        }
+
+        Set<String> allowedPackages = settingsRepository.getAllowedAppPackages();
+        if (allowedPackages.isEmpty()) {
+            return false;
+        }
+
+        String foregroundPackage = getForegroundPackageName();
+        if (foregroundPackage == null || foregroundPackage.isEmpty()) {
+            return false;
+        }
+        return allowedPackages.contains(foregroundPackage);
+    }
+
+    private String getForegroundPackageName() {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root != null && root.getPackageName() != null) {
+            return root.getPackageName().toString();
+        }
+        return latestForegroundPackage;
     }
 
     private void cancelPendingScroll() {
