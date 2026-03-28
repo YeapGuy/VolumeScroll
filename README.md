@@ -18,11 +18,11 @@ I built this because it's more comfortable for me to read through long articles 
 ## Screenshots
 
 <p align="center">
-  <a href="screenshots/disabled-blue.png">
-    <img src="screenshots/disabled-blue.png" width="220"/>
+  <a href="fastlane\metadata\android\en-US\images\phoneScreenshots\1.png">
+    <img src="fastlane\metadata\android\en-US\images\phoneScreenshots\1.png" width="220"/>
   </a>
-  <a href="screenshots/enabled-blue.png">
-    <img src="screenshots/enabled-blue.png" width="220"/>
+  <a href="fastlane\metadata\android\en-US\images\phoneScreenshots\2.png">
+    <img src="fastlane\metadata\android\en-US\images\phoneScreenshots\2.png" width="220"/>
   </a>
 </p>
 
