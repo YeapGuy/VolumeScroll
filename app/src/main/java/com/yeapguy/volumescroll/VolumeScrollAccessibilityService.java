@@ -40,6 +40,7 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
     private String latestForegroundPackage;
     private int pendingKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private int pendingToken = 0;
+    private Runnable pendingScrollRunnable;
     private View feedbackOverlayView;
     private WindowManager windowManager;
     private final Runnable removeFeedbackOverlayRunnable = this::removeFeedbackOverlay;
@@ -154,10 +155,12 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
         cancelPendingScroll();
         pendingKeyCode = keyCode;
         int token = ++pendingToken;
-        handler.postDelayed(() -> executePendingScroll(token), CHORD_WINDOW_MS);
+        pendingScrollRunnable = () -> executePendingScroll(token);
+        handler.postDelayed(pendingScrollRunnable, CHORD_WINDOW_MS);
     }
 
     private void executePendingScroll(int token) {
+        pendingScrollRunnable = null;
         if (token != pendingToken) {
             return;
         }
@@ -222,7 +225,10 @@ public class VolumeScrollAccessibilityService extends AccessibilityService {
     private void cancelPendingScroll() {
         pendingToken++;
         pendingKeyCode = KeyEvent.KEYCODE_UNKNOWN;
-        handler.removeCallbacksAndMessages(null);
+        if (pendingScrollRunnable != null) {
+            handler.removeCallbacks(pendingScrollRunnable);
+            pendingScrollRunnable = null;
+        }
     }
 
     private void setPressedState(int keyCode, boolean pressed) {
