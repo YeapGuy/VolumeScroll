@@ -3,7 +3,7 @@
   <span style="vertical-align: middle;">VolumeScroll</span>
 </h1>
 
-**A small Android app that lets you scroll almost anywhere using your volume buttons.**
+**A small Android app that lets you scroll anywhere using your volume buttons.**
 
 <a href="https://f-droid.org/packages/com.yeapguy.volumescroll">
     <img src="https://f-droid.org/badge/get-it-on.png"
@@ -13,7 +13,15 @@
 
 ## Why?
 
-I built this because it's more comfortable for me to read through long articles or essays "page-by-page". It's more like reading a book 😃 Plus, scrolling like this is way more comfortable when you only hold your phone in one hand, e.g. in public transport.
+Try this way of scrolling and you might not want to go back!
+
+Possible advantages of page-by-page scrolling:
+- Less distracting
+- Easier to hold your phone tightly in one hand
+- Some research suggests paging may help with attention and information recall
+
+Especially great for reading articles, essays, books and other long-form text content.
+Akin to "flipping pages" on physical media.
 
 ## Features
 
