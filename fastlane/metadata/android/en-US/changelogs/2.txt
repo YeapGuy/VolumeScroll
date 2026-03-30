@@ -1,0 +1,2 @@
+Bugfix: fix overlay never disappearing when scrolling right after enabling with key chord
+Remove redundant dependencies to reduce APK size
