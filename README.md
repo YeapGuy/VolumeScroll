@@ -5,6 +5,12 @@
 
 **A small Android app that lets you scroll almost anywhere using your volume buttons.**
 
+<a href="https://f-droid.org/packages/com.yeapguy.volumescroll">
+    <img src="https://f-droid.org/badge/get-it-on.png"
+    alt="Get it on F-Droid"
+    height="80">
+</a>
+
 ## Why?
 
 I built this because it's more comfortable for me to read through long articles or essays "page-by-page". It's more like reading a book 😃 Plus, scrolling like this is way more comfortable when you only hold your phone in one hand, e.g. in public transport.
