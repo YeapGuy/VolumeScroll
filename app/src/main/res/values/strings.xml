@@ -15,6 +15,9 @@
     <string name="hint_selected_apps_none">No apps selected</string>
     <string name="hint_selected_apps_count">%1$d apps selected</string>
     <string name="dialog_select_apps_title">Choose apps for VolumeScroll</string>
+    <string name="action_actions">Actions</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_invert_selection">Invert selection</string>
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_clear">Clear</string>

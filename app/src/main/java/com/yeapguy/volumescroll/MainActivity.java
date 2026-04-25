@@ -7,8 +7,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.view.Menu;
+import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
@@ -29,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private static final int MIN_SCROLL_PERCENT = 70;
     private static final int MAX_SCROLL_PERCENT = 120;
     private static final int SCROLL_PERCENT_STEP = 5;
+    private static final int APP_SELECTION_ACTION_SELECT_ALL = 1;
+    private static final int APP_SELECTION_ACTION_INVERT = 2;
+    private static final int APP_SELECTION_ACTION_CLEAR = 3;
 
     private SettingsRepository settingsRepository;
 
@@ -214,10 +221,10 @@ public class MainActivity extends AppCompatActivity {
             checked[i] = currentSelectedPackages.contains(app.packageName);
         }
 
-        new MaterialAlertDialogBuilder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.dialog_select_apps_title)
-                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> checked[which] = isChecked)
-                .setPositiveButton(R.string.action_save, (dialog, which) -> {
+                .setMultiChoiceItems(labels, checked, (dialogInterface, which, isChecked) -> checked[which] = isChecked)
+                .setPositiveButton(R.string.action_save, (dialogInterface, which) -> {
                     Set<String> selectedPackages = new HashSet<>();
                     for (int i = 0; i < launchableApps.size(); i++) {
                         if (checked[i]) {
@@ -227,12 +234,55 @@ public class MainActivity extends AppCompatActivity {
                     settingsRepository.setAllowedAppPackages(selectedPackages);
                     updateSelectedAppsSummary(settingsRepository.isAppFilterEnabled(), selectedPackages.size());
                 })
-                .setNeutralButton(R.string.action_clear, (dialog, which) -> {
-                    settingsRepository.setAllowedAppPackages(new HashSet<>());
-                    updateSelectedAppsSummary(settingsRepository.isAppFilterEnabled(), 0);
-                })
+                .setNeutralButton(R.string.action_actions, null)
                 .setNegativeButton(R.string.action_cancel, null)
-                .show();
+                .create();
+
+        dialog.setOnShowListener(ignored -> {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> {
+                PopupMenu menu = new PopupMenu(this, view);
+                Menu popupMenu = menu.getMenu();
+                popupMenu.add(0, APP_SELECTION_ACTION_SELECT_ALL, 0, R.string.action_select_all);
+                popupMenu.add(0, APP_SELECTION_ACTION_INVERT, 1, R.string.action_invert_selection);
+                popupMenu.add(0, APP_SELECTION_ACTION_CLEAR, 2, R.string.action_clear);
+
+                menu.setOnMenuItemClickListener(item -> {
+                    int itemId = item.getItemId();
+                    if (itemId == APP_SELECTION_ACTION_SELECT_ALL) {
+                        setCheckedStates(dialog, checked, true);
+                        return true;
+                    }
+                    if (itemId == APP_SELECTION_ACTION_INVERT) {
+                        invertCheckedStates(dialog, checked);
+                        return true;
+                    }
+                    if (itemId == APP_SELECTION_ACTION_CLEAR) {
+                        setCheckedStates(dialog, checked, false);
+                        return true;
+                    }
+                    return false;
+                });
+                menu.show();
+            });
+        });
+
+        dialog.show();
+    }
+
+    private void setCheckedStates(AlertDialog dialog, boolean[] checked, boolean checkedState) {
+        ListView listView = dialog.getListView();
+        for (int i = 0; i < checked.length; i++) {
+            checked[i] = checkedState;
+            listView.setItemChecked(i, checkedState);
+        }
+    }
+
+    private void invertCheckedStates(AlertDialog dialog, boolean[] checked) {
+        ListView listView = dialog.getListView();
+        for (int i = 0; i < checked.length; i++) {
+            checked[i] = !checked[i];
+            listView.setItemChecked(i, checked[i]);
+        }
     }
 
     private List<AppEntry> getLaunchableApps() {
