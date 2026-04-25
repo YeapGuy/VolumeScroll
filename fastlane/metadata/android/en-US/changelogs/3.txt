@@ -1,0 +1,1 @@
+Improve selection options in app filter dialog (select all + invert + clear)
